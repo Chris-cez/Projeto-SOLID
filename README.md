@@ -33,8 +33,13 @@ O Princípio de Demeter (LoD), também conhecido como Lei de Demeter, é um prin
 Como esse projeto fere cada um desses principios? 
 
 S (Single Responsibility Principle): A função main tem muitas responsabilidades, incluindo abrir o arquivo, ler os dados, converter os dados, imprimir os dados e realizar operações CRUD.
+
 O (Open/Closed Principle): O código é difícil de estender para suportar novos formatos de arquivos ou novas operações de CRUD. Por exemplo, se você quiser adicionar uma nova operação de CRUD, como "delete", precisará modificar várias funções.
+
 L (Liskov Substitution Principle): O código não permite que subclasses de Person sejam usadas no lugar de Person. Por exemplo, se você criar uma subclasse de Person chamada Employee com campos adicionais, como "cargo", não poderá usar objetos Employee nas funções CRUD.
+
 I (Interface Segregation Principle): O código não separa as interfaces para diferentes operações de CRUD. Por exemplo, a função readPeople é usada para ler todos os registros e também para ler um registro específico.
+
 D (Dependency Inversion Principle): O código depende diretamente de arquivos CSV, em vez de depender de abstrações. Por exemplo, a função readPeople abre o arquivo CSV diretamente, em vez de usar uma interface para abstrair a operação de leitura de arquivos.
+
 Princípio Demeter: O código viola o princípio Demeter porque as funções CRUD acessam diretamente os campos de objetos Person. Por exemplo, a função createPerson acessa os campos ID, Name e Age do objeto person.
