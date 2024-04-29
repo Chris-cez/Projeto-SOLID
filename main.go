@@ -14,8 +14,24 @@ type Person struct {
 	Age  int    `csv:"age"`
 }
 
-func readPeople(filename string) ([]Person, error) {
-	file, err := os.Open(filename)
+// Interface para abstrair a operação de leitura de arquivos
+type Reader interface {
+	Read() ([]Person, error)
+}
+
+// Interface para abstrair a operação de escrita de arquivos
+type Writer interface {
+	Write(people []Person) error
+}
+
+// Classe para ler dados de um arquivo CSV
+type CSVReader struct {
+	filename string
+}
+
+// Implementa a interface Reader
+func (r *CSVReader) Read() ([]Person, error) {
+	file, err := os.Open(r.filename)
 	if err != nil {
 		return nil, err
 	}
@@ -46,80 +62,14 @@ func readPeople(filename string) ([]Person, error) {
 	return people, nil
 }
 
-func createPerson(filename string, person Person) error {
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	record := []string{strconv.Itoa(person.ID), person.Name, strconv.Itoa(person.Age)}
-	err = writer.Write(record)
-	if err != nil {
-		return err
-	}
-
-	return nil
+// Classe para escrever dados em um arquivo CSV
+type CSVWriter struct {
+	filename string
 }
 
-func readPerson(filename string, id int) (Person, error) {
-	people, err := readPeople(filename)
-	if err != nil {
-		return Person{}, err
-	}
-
-	for _, person := range people {
-		if person.ID == id {
-			return person, nil
-		}
-	}
-
-	return Person{}, fmt.Errorf("person with ID %d not found", id)
-}
-
-func updatePerson(filename string, person Person) error {
-	people, err := readPeople(filename)
-	if err != nil {
-		return err
-	}
-
-	found := false
-	for i, p := range people {
-		if p.ID == person.ID {
-			people[i] = person
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return fmt.Errorf("person with ID %d not found", person.ID)
-	}
-
-	return writePeople(filename, people)
-}
-
-func deletePerson(filename string, id int) error {
-	people, err := readPeople(filename)
-	if err != nil {
-		return err
-	}
-
-	newPeople := []Person{}
-	for _, person := range people {
-		if person.ID != id {
-			newPeople = append(newPeople, person)
-		}
-	}
-
-	return writePeople(filename, newPeople)
-}
-
-func writePeople(filename string, people []Person) error {
-	file, err := os.Create(filename)
+// Implementa a interface Writer
+func (w *CSVWriter) Write(people []Person) error {
+	file, err := os.Create(w.filename)
 	if err != nil {
 		return err
 	}
@@ -139,51 +89,136 @@ func writePeople(filename string, people []Person) error {
 	return nil
 }
 
+// Função para criar um novo registro
+func createPerson(w Writer, person Person) error {
+	people, err := w.Read()
+	if err != nil {
+		return err
+	}
+
+	people = append(people, person)
+
+	return w.Write(people)
+}
+
+// Função para ler um registro específico
+func readPerson(r Reader, id int) (Person, error) {
+	people, err := r.Read()
+	if err != nil {
+		return Person{}, err
+	}
+
+	for _, person := range people {
+		if person.ID == id {
+			return person, nil
+		}
+	}
+
+	return Person{}, fmt.Errorf("person with ID %d not found", id)
+}
+
+// Função para atualizar um registro
+func updatePerson(w Writer, person Person) error {
+	people, err := w.Read()
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for i, p := range people {
+		if p.ID == person.ID {
+			people[i] = person
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("person with ID %d not found", person.ID)
+	}
+
+	return w.Write(people)
+}
+
+// Função para deletar um registro
+func deletePerson(w Writer, id int) error {
+	people, err := w.Read()
+	if err != nil {
+		return err
+	}
+
+	newPeople := []Person{}
+	for _, person := range people {
+		if person.ID != id {
+			newPeople = append(newPeople, person)
+		}
+	}
+
+	return w.Write(newPeople)
+}
+
 func main() {
-	people, err := readPeople("people.csv")
+	// Criar um leitor e um escritor
+	reader := &CSVReader{filename: "people.csv"}
+	writer := &CSVWriter{filename: "people.csv"}
+
+	// Ler os dados do arquivo CSV
+	people, err := reader.Read()
 	if err != nil {
 		panic(err)
 	}
 
+	// Imprimir os dados
 	fmt.Println(people)
 
+	// Criar um novo registro
 	newPerson := Person{
 		ID:   4,
 		Name: "John Doe",
 		Age:  30,
 	}
-	err = createPerson("people.csv", newPerson)
+	err = createPerson(writer, newPerson)
 	if err != nil {
 		panic(err)
 	}
 
-	createdPerson, err := readPerson("people.csv", 4)
+	// Ler o registro criado
+	createdPerson, err := readPerson(reader, 4)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(createdPerson)
 
+	// Atualizar o registro
 	updatedPerson := Person{
 		ID:   4,
 		Name: "Jane Doe",
 		Age:  35,
 	}
-	err = updatePerson("people.csv", updatedPerson)
+	err = updatePerson(writer, updatedPerson)
 	if err != nil {
 		panic(err)
 	}
-	updatedPerson, err = readPerson("people.csv", 4)
+
+	// Ler o registro atualizado
+	updatedPerson, err = readPerson(reader, 4)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(updatedPerson)
-	err = deletePerson("people.csv", 4)
+
+	// Deletar o registro
+	err = deletePerson(writer, 4)
 	if err != nil {
 		panic(err)
 	}
-	people, err = readPeople("people.csv")
+
+	// Ler os dados novamente
+	people, err = reader.Read()
 	if err != nil {
 		panic(err)
 	}
+
+	// Imprimir os dados
 	fmt.Println(people)
 }
