@@ -43,3 +43,39 @@ I (Interface Segregation Principle): O código não separa as interfaces para di
 D (Dependency Inversion Principle): O código depende diretamente de arquivos CSV, em vez de depender de abstrações. Por exemplo, a função readPeople abre o arquivo CSV diretamente, em vez de usar uma interface para abstrair a operação de leitura de arquivos.
 
 Princípio Demeter: O código viola o princípio Demeter porque as funções CRUD acessam diretamente os campos de objetos Person. Por exemplo, a função createPerson acessa os campos ID, Name e Age do objeto person.
+
+Como o código corrigido faz para seguir cada um dos princípios SOLID?
+
+Princípio da Responsabilidade Única (SRP):
+
+Cada classe tem uma única responsabilidade:
+CSVReader: Ler dados de um arquivo CSV.
+CSVWriter: Escrever dados em um arquivo CSV.
+Person: Armazenar informações sobre uma pessoa.
+
+2. Princípio Aberto/Fechado (OCP):
+
+As classes são abertas para extensão, mas fechadas para modificação:
+As interfaces Reader e Writer podem ser estendidas para implementar diferentes formatos de arquivo.
+A classe Person pode ser estendida para adicionar novos campos.
+
+3. Princípio da Substituição de Liskov (LSP):
+
+As subclasses podem ser substituídas pelas superclasses sem que isso cause problemas:
+Qualquer classe que implemente a interface Reader pode ser usada no lugar de um CSVReader.
+Qualquer classe que implemente a interface Writer pode ser usada no lugar de um CSVWriter.
+
+4. Princípio da Segregação de Interfaces (ISP):
+
+As interfaces são pequenas e específicas:
+A interface Reader define apenas o método Read().
+A interface Writer define apenas o método Write().
+
+5. Princípio da Inversão de Dependência (DIP):
+
+As classes de alto nível dependem de abstrações, não de implementações concretas:
+A função createPerson() recebe uma instância de Writer como argumento, não uma instância específica de CSVWriter.
+As funções readPerson(), updatePerson() e deletePerson() recebem uma instância de Reader como argumento, não uma instância específica de CSVReader.
+
+OBS: Devido a alguns problemas que tive com meu notebook os commits foram feitos de forma direta pelo github, por isso se observar as alterações serão totais no código.
+O código criado foi um CRUD que salva os arquivos em .csv, nada complexo e um código que eu pessoalmente acredito ser overenginering implementar com todos os principios SOLID e Demeter. A ideia é reutilizar esse código refazendo as devidas alterações para usar no projeto final.
